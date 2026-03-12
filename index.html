@@ -209,40 +209,44 @@
         };
         let duLieuTo = {};
 
-        function chayHeThongDashboard() {
-            // 1. Tắt các luồng nghe cũ (nếu có) trước khi mở luồng mới
-            db.ref('thong_tin_to').off();
-            db.ref('reports').off();
-            db.ref('thong_tin_to').on('value', snap => {
-                const data = snap.val();
-                if(!data) return;
-                Object.keys(data).forEach(key => {
-                    let id = key.split('@')[0];
-                    if(!duLieuTo[id]) duLieuTo[id] = { tong: 0, bau: 0, gio: "-" };
-                    duLieuTo[id].tong = parseInt(data[key].tong_cu_tri) || 0;
-                });
-                
-                db.ref('reports').on('value', s => {
-                    const rps = s.val();
-                    Object.keys(duLieuTo).forEach(id => { duLieuTo[id].bau = 0; duLieuTo[id].gio = "-"; });
-                    if(rps) {
-                        Object.values(rps).forEach(rp => {
-                            if(rp && rp.email) {
-                                let id = rp.email.split('@')[0];
-                                if(duLieuTo[id]) {
-                                    let soPhieu = parseInt(rp.so_phieu) || 0;
-                                    if(soPhieu > duLieuTo[id].bau) {
-                                        duLieuTo[id].bau = soPhieu;
-                                        duLieuTo[id].gio = rp.khung_gio || "-";
-                                    }
-                                }
-                            }
-                        });
-                    }
-                    capNhatGiaoDienDashboard();
-                });
+        function chayHeThongDashboard(userEmail) {
+    // 1. Tắt các luồng nghe cũ để chống "bóng ma" in đè dữ liệu
+    db.ref('thong_tin_to').off();
+    db.ref('reports').off();
+
+    // 2. Chỉ tải thông tin Tổng cử tri 1 LẦN DUY NHẤT (dùng .once thay vì .on)
+    db.ref('thong_tin_to').once('value').then(snap => {
+        const data = snap.val();
+        if(data) {
+            Object.keys(data).forEach(key => {
+                let id = key.split('@')[0];
+                if(!duLieuTo[id]) duLieuTo[id] = { tong: 0, bau: 0, gio: "-" };
+                duLieuTo[id].tong = parseInt(data[key].tong_cu_tri) || 0;
             });
         }
+        
+        // 3. Sau khi tải xong tổ, mới bật Listener theo dõi Tiến độ gửi báo cáo
+        db.ref('reports').on('value', s => {
+            const rps = s.val();
+            Object.keys(duLieuTo).forEach(id => { duLieuTo[id].bau = 0; duLieuTo[id].gio = "-"; });
+            if(rps) {
+                Object.values(rps).forEach(rp => {
+                    if(rp && rp.email) {
+                        let id = rp.email.split('@')[0];
+                        if(duLieuTo[id]) {
+                            let soPhieu = parseInt(rp.so_phieu) || 0;
+                            if(soPhieu > duLieuTo[id].bau) {
+                                duLieuTo[id].bau = soPhieu;
+                                duLieuTo[id].gio = rp.khung_gio || "-";
+                            }
+                        }
+                    }
+                });
+            }
+            capNhatGiaoDienDashboard(userEmail);
+        });
+    });
+}
 
         function capNhatGiaoDienDashboard() {
             let tongP = 0, bauP = 0, low = 0, hTienDo = "", hBang = "";
@@ -416,4 +420,5 @@
     </script>
 </body>
 </html>
+
 
