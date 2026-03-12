@@ -89,7 +89,7 @@
             <strong id="tong-cu-tri" style="color: #2e7d32; font-size: 28px;">...</strong>
         </div>
         
-        <label style="font-weight: 600; font-size: 15px; color: #444;">Số phiếu đã bầu:</label>
+        <label style="font-weight: 600; font-size: 15px; color: #444;">Số cử tri đã đi bầu:</label>
         <input type="number" id="vote-count" class="inp-txt" placeholder="Nhập số liệu mới nhất..." min="0">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 20px; padding: 10px; background: #fff5f5; border-radius: 8px;">
@@ -210,68 +210,100 @@
         let duLieuTo = {};
 
         function chayHeThongDashboard(userEmail) {
-    // 1. Tắt các luồng nghe cũ để chống "bóng ma" in đè dữ liệu
-    db.ref('thong_tin_to').off();
-    db.ref('reports').off();
-
-    // 2. Chỉ tải thông tin Tổng cử tri 1 LẦN DUY NHẤT (dùng .once thay vì .on)
-    db.ref('thong_tin_to').once('value').then(snap => {
-        const data = snap.val();
-        if(data) {
-            Object.keys(data).forEach(key => {
-                let id = key.split('@')[0];
-                if(!duLieuTo[id]) duLieuTo[id] = { tong: 0, bau: 0, gio: "-" };
-                duLieuTo[id].tong = parseInt(data[key].tong_cu_tri) || 0;
+            db.ref('thong_tin_to').on('value', snap => {
+                const data = snap.val();
+                if(!data) return;
+                Object.keys(data).forEach(key => {
+                    let id = key.split('@')[0];
+                    if(!duLieuTo[id]) duLieuTo[id] = { tong: 0, bau: 0, gio: "-" };
+                    duLieuTo[id].tong = parseInt(data[key].tong_cu_tri) || 0;
+                });
+                
+                db.ref('reports').on('value', s => {
+                    const rps = s.val();
+                    Object.keys(duLieuTo).forEach(id => { duLieuTo[id].bau = 0; duLieuTo[id].gio = "-"; });
+                    if(rps) {
+                        Object.values(rps).forEach(rp => {
+                            if(rp && rp.email) {
+                                let id = rp.email.split('@')[0];
+                                if(duLieuTo[id]) {
+                                    let soPhieu = parseInt(rp.so_phieu) || 0;
+                                    if(soPhieu > duLieuTo[id].bau) {
+                                        duLieuTo[id].bau = soPhieu;
+                                        duLieuTo[id].gio = rp.khung_gio || "-";
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    capNhatGiaoDienDashboard(userEmail);
+                });
             });
         }
-        
-        // 3. Sau khi tải xong tổ, mới bật Listener theo dõi Tiến độ gửi báo cáo
-        db.ref('reports').on('value', s => {
-            const rps = s.val();
-            Object.keys(duLieuTo).forEach(id => { duLieuTo[id].bau = 0; duLieuTo[id].gio = "-"; });
-            if(rps) {
-                Object.values(rps).forEach(rp => {
-                    if(rp && rp.email) {
-                        let id = rp.email.split('@')[0];
-                        if(duLieuTo[id]) {
-                            let soPhieu = parseInt(rp.so_phieu) || 0;
-                            if(soPhieu > duLieuTo[id].bau) {
-                                duLieuTo[id].bau = soPhieu;
-                                duLieuTo[id].gio = rp.khung_gio || "-";
-                            }
-                        }
-                    }
-                });
-            }
-            capNhatGiaoDienDashboard(userEmail);
-        });
-    });
-}
-
-        function capNhatGiaoDienDashboard() {
+        function capNhatGiaoDienDashboard(userEmail) {
             let tongP = 0, bauP = 0, low = 0, hTienDo = "", hBang = "";
+            
+            // --- BỘ LỌC PHÂN QUYỀN THÔNG MINH ---
+            let prefix = userEmail.split('@')[0].toLowerCase();
+            let donViDuocXem = "ALL";
+            
+            if (prefix.startsWith('dvbc')) {
+                let soDonVi = prefix.replace('dvbc', '');
+                donViDuocXem = "Đơn vị bầu cử số " + soDonVi;
+                document.querySelector('.brand-wrapper h1').innerText = "TIẾN ĐỘ ĐƠN VỊ SỐ " + soDonVi;
+            } else {
+                document.querySelector('.brand-wrapper h1').innerText = "TIẾN ĐỘ BẦU CỬ PHƯỜNG";
+            }
+            // -------------------------------------
+
             Object.keys(cauHinhDonVi).forEach(tenDv => {
-                let tongDv = 0, bauDv = 0, hTo = "";
-                cauHinhDonVi[tenDv].forEach(id => {
-                    let to = duLieuTo[id] || { tong: 0, bau: 0, gio: "-" };
-                    tongDv += to.tong; bauDv += to.bau;
-                    let tl = to.tong > 0 ? (to.bau/to.tong*100) : 0;
-                    if(tl < 50 && to.tong > 0) low++;
-                    hTo += `<tr>
-                        <td class="td-khuvuc">Tổ bầu cử số ${id.substring(2)}</td>
-                        <td>${to.tong.toLocaleString()}</td>
-                        <td style="color:var(--success); font-weight:bold;">${to.bau.toLocaleString()}</td>
-                        <td><span class="badge-tl ${tl >= 80 ? 'ok' : ''}">${tl.toFixed(1)}%</span></td>
-                        <td style="color:#666; font-size:13px;">${to.gio}</td>
-                    </tr>`;
-                });
-                let tlDv = tongDv > 0 ? (bauDv/tongDv*100).toFixed(1) : 0;
-                hTienDo += `<div class="progress-card"><b>${tenDv}</b> <span style="float:right; font-weight:900; color:var(--danger)">${tlDv}%</span><div class="bar-bg"><div class="bar-fill" style="width:${tlDv}%"></div></div></div>`;
-                hBang += `<tr style="background:#f1f3f5"><td colspan="5" style="text-align:left;font-weight:bold; color:#555;">${tenDv.toUpperCase()}</td></tr>` + hTo;
-                tongP += tongDv; bauP += bauDv;
+                if (donViDuocXem === "ALL" || donViDuocXem === tenDv) {
+                    let tongDv = 0, bauDv = 0, hTo = "";
+                    
+                    // Tạo một mảng trống để gom dữ liệu các Tổ thuộc Đơn vị này lại
+                    let mangCacTo = []; 
+
+                    // 1. Quét qua các Tổ và thu thập số liệu
+                    cauHinhDonVi[tenDv].forEach(id => {
+                        let to = duLieuTo[id] || { tong: 0, bau: 0, gio: "-" };
+                        tongDv += to.tong; bauDv += to.bau;
+                        let tl = to.tong > 0 ? (to.bau/to.tong*100) : 0;
+                        if(tl < 50 && to.tong > 0) low++;
+                        
+                        // Đẩy dữ liệu vào mảng tạm thay vì in ra HTML ngay
+                        mangCacTo.push({
+                            id: id,
+                            tong: to.tong,
+                            bau: to.bau,
+                            tyLe: tl,
+                            gio: to.gio
+                        });
+                    });
+
+                    // 2. SẮP XẾP THÔNG MINH: Lệnh sort() sẽ đẩy tỷ lệ thấp nhất lên đầu mảng
+                    mangCacTo.sort((a, b) => a.tyLe - b.tyLe);
+
+                    // 3. Vẽ HTML từ mảng đã được sắp xếp
+                    mangCacTo.forEach(to => {
+                        hTo += `<tr>
+                            <td class="td-khuvuc">Tổ bầu cử số ${to.id.substring(2)}</td>
+                            <td>${to.tong.toLocaleString()}</td>
+                            <td style="color:var(--success); font-weight:bold;">${to.bau.toLocaleString()}</td>
+                            <td><span class="badge-tl ${to.tyLe >= 80 ? 'ok' : ''}">${to.tyLe.toFixed(1)}%</span></td>
+                            <td style="color:#666; font-size:13px;">${to.gio}</td>
+                        </tr>`;
+                    });
+
+                    let tlDv = tongDv > 0 ? (bauDv/tongDv*100).toFixed(1) : 0;
+                    hTienDo += `<div class="progress-card"><b>${tenDv}</b> <span style="float:right; font-weight:900; color:var(--danger)">${tlDv}%</span><div class="bar-bg"><div class="bar-fill" style="width:${tlDv}%"></div></div></div>`;
+                    hBang += `<tr style="background:#f1f3f5"><td colspan="5" style="text-align:left;font-weight:bold; color:#555;">${tenDv.toUpperCase()}</td></tr>` + hTo;
+                    tongP += tongDv; bauP += bauDv;
+                }
             });
+            
             document.getElementById('gridProgress').innerHTML = hTienDo;
             document.getElementById('tableBody').innerHTML = hBang;
+            
             document.getElementById('st-tong').innerText = tongP.toLocaleString();
             document.getElementById('st-bau').innerText = bauP.toLocaleString();
             document.getElementById('st-ty-le').innerText = (tongP>0?(bauP/tongP*100).toFixed(2):0) + "%";
@@ -279,6 +311,7 @@
         }
 
         // 4. LOGIC CỦA TỔ BẦU CỬ (NHẬP LIỆU)
+        let maxPhieuTruocDo = 0; // Biến lưu kỷ lục số phiếu của các mốc trước
         function laGioKhoaHeThong() {
             const gioHienTai = new Date();
             const gio = gioHienTai.getHours();
@@ -301,12 +334,23 @@
             const tongCuTri = parseInt(document.getElementById('tong-cu-tri').innerText) || 0;
             const oNhap = document.getElementById('vote-count');
             let soPhieuNhap = parseInt(oNhap.value) || 0;
+            const statusMsg = document.getElementById('report-status');
             
             if (tongCuTri === 0) return document.getElementById('ty-le-phan-tram').innerText = "0.00%";
+            
             if (soPhieuNhap > tongCuTri) {
                 alert("LỖI: Số phiếu (" + soPhieuNhap + ") lớn hơn Tổng cử tri (" + tongCuTri + ")!");
-                oNhap.value = ""; return document.getElementById('ty-le-phan-tram').innerText = "0.00%";
+                oNhap.value = ""; 
+                return document.getElementById('ty-le-phan-tram').innerText = "0.00%";
             }
+            
+            // Hiện dòng chữ đỏ nhắc nhở nếu nhập số lùi
+            if (soPhieuNhap < maxPhieuTruocDo && oNhap.value !== "") {
+                statusMsg.innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-exclamation-triangle"></i> Lỗi: Số phiếu phải ≥ mốc trước (' + maxPhieuTruocDo + ')</span>';
+            } else if (statusMsg.innerHTML.includes('Lỗi: Số phiếu phải')) {
+                statusMsg.innerHTML = ''; 
+            }
+
             let tyLe = (soPhieuNhap / tongCuTri) * 100;
             document.getElementById('ty-le-phan-tram').innerText = tyLe.toFixed(2) + "%";
         }
@@ -319,21 +363,47 @@
             const emailKey = userEmail.replace(/\./g, '_'); 
             db.ref('thong_tin_to/' + emailKey).once('value').then(snap => {
                 document.getElementById('tong-cu-tri').innerText = snap.exists() ? snap.val().tong_cu_tri : "Chưa cập nhật";
-                const khungGioHienTai = setGioMacDinh();
                 
+                // Thiết lập giờ và gọi hàm ràng buộc khung giờ mở/đóng
+                setGioMacDinh();
+                rangBuocKhungGio(); 
+                
+                const gioDangChon = document.getElementById('report-time').value;
+
                 db.ref('reports').orderByChild('email').equalTo(userEmail).once('value').then(rSnap => {
                     let foundData = null;
-                    rSnap.forEach(child => { if (child.val().khung_gio === khungGioHienTai) foundData = child.val(); });
-                    document.getElementById('vote-count').value = foundData ? foundData.so_phieu : "";
+                    maxPhieuTruocDo = 0; // Làm sạch dữ liệu trước khi đếm lại
+                    
+                    rSnap.forEach(child => { 
+                        let data = child.val();
+                        if (data.khung_gio === gioDangChon) {
+                            foundData = data; 
+                        } else {
+                            // Cập nhật số liệu cao nhất từ các mốc giờ TRƯỚC ĐÓ
+                            if (data.so_phieu > maxPhieuTruocDo) maxPhieuTruocDo = data.so_phieu;
+                        }
+                    });
+                    
+                    // --- BẮT ĐẦU ĐOẠN ĐÃ ĐƯỢC THAY THẾ ---
+                    const oNhapPhieu = document.getElementById('vote-count');
+                    
+                    if (foundData) {
+                        oNhapPhieu.value = foundData.so_phieu;
+                    } else if (maxPhieuTruocDo > 0) {
+                        oNhapPhieu.value = maxPhieuTruocDo;
+                    } else {
+                        oNhapPhieu.value = ""; 
+                    }
+                    // --- KẾT THÚC ĐOẠN ĐÃ ĐƯỢC THAY THẾ ---
+
                     tinhTyLe(); 
                 }).finally(() => {
+                    const btnSubmit = document.getElementById('btnSubmit');
                     if (laGioKhoaHeThong()) {
-                        document.getElementById('btnSubmit').disabled = true;
-                        document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-ban"></i> HẾT GIỜ BÁO CÁO';
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<i class="fas fa-ban"></i> HẾT GIỜ BÁO CÁO';
                         document.getElementById('lock-message').style.display = "block";
                         document.getElementById('vote-count').disabled = true;
-                    } else {
-                        document.getElementById('vote-count').disabled = false;
                     }
                 });
             });
@@ -352,7 +422,7 @@
 
                 if(danhSachAdmin.includes(userEmail)) {
                     chuyenManHinh('dashboardView');
-                    chayHeThongDashboard();
+                    chayHeThongDashboard(userEmail);
                 } else {
                     chuyenManHinh('reportView');
                     khoiTaoToBauCu(userEmail);
@@ -391,10 +461,18 @@
             
             const tongCuTri = parseInt(document.getElementById('tong-cu-tri').innerText);
             const voteCount = document.getElementById('vote-count').value;
-            if (!voteCount || parseInt(voteCount) > tongCuTri) return alert("Số liệu không hợp lệ!");
+            let soPhieuNhap = parseInt(voteCount);
+
+            if (!voteCount || soPhieuNhap > tongCuTri) return alert("Số liệu không hợp lệ!");
+
+            // RÀNG BUỘC LOGIC SỐ LIỆU: Bật popup chặn gửi
+            if (soPhieuNhap < maxPhieuTruocDo) {
+                alert("LỖI LOGIC NGHIÊM TRỌNG:\nSố phiếu hiện tại (" + soPhieuNhap + ") đang NHỎ HƠN số phiếu bạn đã báo cáo ở mốc trước đó (" + maxPhieuTruocDo + ").\n\nVui lòng kiểm tra và nhập lại!");
+                return;
+            }
 
             const reportData = {
-                email: user.email, so_phieu: parseInt(voteCount),
+                email: user.email, so_phieu: soPhieuNhap,
                 ty_le_dat_duoc: document.getElementById('ty-le-phan-tram').innerText, 
                 khung_gio: document.getElementById('report-time').value,
                 thoi_gian_nhap: new Date().toLocaleString("vi-VN")
@@ -410,6 +488,7 @@
             }).then(() => {
                 document.getElementById('report-status').innerHTML = '<i class="fas fa-check-circle"></i> Đã đồng bộ!';
                 setTimeout(() => { document.getElementById('report-status').innerHTML = ""; }, 3000);
+                maxPhieuTruocDo = soPhieuNhap; // Cập nhật lại kỷ lục sau khi gửi thành công
             }).finally(() => {
                 btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI BÁO CÁO NGAY';
             });
@@ -417,8 +496,71 @@
 
         document.getElementById('vote-count').addEventListener('input', tinhTyLe);
         document.getElementById('report-time').addEventListener('change', () => { khoiTaoToBauCu(auth.currentUser.email); });
+
+        // HÀM RÀNG BUỘC KHUNG GIỜ CẬP NHẬT (MỞ ĐÚNG 30 PHÚT)
+        function rangBuocKhungGio() {
+            const now = new Date();
+            const gio = now.getHours();
+            const phut = now.getMinutes();
+            // Đổi thời gian thực tế ra số thập phân (Ví dụ: 9h15 -> 9.25, 9h30 -> 9.5)
+            const gioThapPhan = gio + (phut / 60); 
+
+            const selectGio = document.getElementById('report-time');
+            const options = selectGio.options;
+            const btnSubmit = document.getElementById('btnSubmit');
+            let coMocNaoMoKhong = false; // Biến kiểm tra xem có đang trong giờ báo cáo không
+
+            const tenGoc = {
+                "09:00": "09:00 Sáng",
+                "11:30": "11:30 Trưa",
+                "15:00": "15:00 Chiều",
+                "19:00": "19:00 Tối",
+                "22:00": "22:00 Tối"
+            };
+
+            for (let i = 0; i < options.length; i++) {
+                let val = options[i].value; 
+                let parts = val.split(':');
+                // Đổi mốc báo cáo ra số thập phân (Ví dụ: 11:30 -> 11.5)
+                let mocGio = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
+
+                // Thiết lập cửa sổ thời gian: Từ đúng mốc giờ đến +30 phút (0.5 giờ)
+                let gioMo = mocGio -0.5; 
+                let gioDong = mocGio + 0.5; 
+
+                // 1. Nếu chưa tới giờ
+                if (gioThapPhan < gioMo) {
+                    options[i].disabled = true;
+                    options[i].text = tenGoc[val] + " 🔒 (Chưa đến giờ)";
+                } 
+                // 2. Nếu đã lố 30 phút
+                else if (gioThapPhan > gioDong) {
+                    options[i].disabled = true;
+                    options[i].text = tenGoc[val] + " ❌ (Đã chốt sổ)";
+                } 
+                // 3. Nằm đúng trong 30 phút vàng
+                else {
+                    options[i].disabled = false;
+                    options[i].text = tenGoc[val] + " ✅ (Đang mở)";
+                    selectGio.value = val; // Tự động trỏ thanh chọn vào mốc đang mở
+                    coMocNaoMoKhong = true;
+                }
+            }
+
+            // Xử lý nút Submit: Nếu không có mốc nào đang mở (nghĩa là đang ở khung giờ rảnh)
+            if (!coMocNaoMoKhong) {
+                btnSubmit.disabled = true;
+                document.getElementById('report-status').innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-hourglass-half"></i> Hiện không trong khung giờ nhận báo cáo (chỉ mở trước và sau 30 phút tính từ mốc).</span>';
+                document.getElementById('vote-count').disabled = true;
+            } else {
+                // Đảm bảo nút Submit mở nếu đang trong giờ hợp lệ (và chưa quá 22:30 chung)
+                if(!laGioKhoaHeThong()){
+                    btnSubmit.disabled = false;
+                    document.getElementById('report-status').innerHTML = '';
+                    document.getElementById('vote-count').disabled = false;
+                }
+            }
+        }
     </script>
 </body>
 </html>
-
-
