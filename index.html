@@ -210,6 +210,9 @@
         let duLieuTo = {};
 
         function chayHeThongDashboard() {
+            // 1. Tắt các luồng nghe cũ (nếu có) trước khi mở luồng mới
+            db.ref('thong_tin_to').off();
+            db.ref('reports').off();
             db.ref('thong_tin_to').on('value', snap => {
                 const data = snap.val();
                 if(!data) return;
@@ -413,3 +416,4 @@
     </script>
 </body>
 </html>
+
