@@ -326,7 +326,7 @@
             const gioHienTai = new Date().getHours();
             let mocBaoCao = "19:00"; 
             if (gioHienTai >= 7 && gioHienTai < 11) mocBaoCao = "09:00";
-            else if (gioHienTai >= 11 && gioHienTai < 13) mocBaoCao = "11:00";
+            else if (gioHienTai >= 10 && gioHienTai < 12) mocBaoCao = "11:00";
             else if (gioHienTai >= 13 && gioHienTai < 15) mocBaoCao = "15:00";
             else if (gioHienTai >= 15 && gioHienTai < 19) mocBaoCao = "19:00";
             document.getElementById('report-time').value = mocBaoCao;
