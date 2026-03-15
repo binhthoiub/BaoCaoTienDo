@@ -499,7 +499,15 @@
 
         document.getElementById('vote-count').addEventListener('input', tinhTyLe);
         document.getElementById('report-time').addEventListener('change', () => { khoiTaoToBauCu(auth.currentUser.email); });
-
+        // HÀM PHỤ TRỢ KIỂM TRA DỮ LIỆU TRÊN FIREBASE
+        async function kiemTraMocGioDaNop(email, mocGio) {
+            const snapshot = await db.ref('reports').orderByChild('email').equalTo(email).once('value');
+            let check = false;
+            snapshot.forEach(child => {
+                if (child.val().khung_gio === mocGio) check = true;
+            });
+            return check;
+        }
         // HÀM RÀNG BUỘC KHUNG GIỜ CẬP NHẬT (MỞ ĐÚNG 30 PHÚT)
         function rangBuocKhungGio() {
             const now = new Date();
