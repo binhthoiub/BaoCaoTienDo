@@ -100,7 +100,7 @@
         <label style="font-weight: 600; font-size: 15px; color: #444;">Mốc giờ báo cáo:</label>
         <select id="report-time" class="inp-sel">
             <option value="09:00">09:00 Sáng</option>
-            <option value="11:30">11:30 Trưa</option>
+            <option value="11:00">11:00 Trưa</option>
             <option value="15:00">15:00 Chiều</option>
             <option value="19:00">19:00 Tối</option>
             <option value="22:00">22:00 Tối</option>
@@ -326,7 +326,7 @@
             const gioHienTai = new Date().getHours();
             let mocBaoCao = "19:00"; 
             if (gioHienTai >= 7 && gioHienTai < 11) mocBaoCao = "09:00";
-            else if (gioHienTai >= 11 && gioHienTai < 13) mocBaoCao = "11:30";
+            else if (gioHienTai >= 11 && gioHienTai < 13) mocBaoCao = "11:00";
             else if (gioHienTai >= 13 && gioHienTai < 15) mocBaoCao = "15:00";
             else if (gioHienTai >= 15 && gioHienTai < 19) mocBaoCao = "19:00";
             document.getElementById('report-time').value = mocBaoCao;
