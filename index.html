@@ -551,7 +551,7 @@
             // Xử lý nút Submit: Nếu không có mốc nào đang mở (nghĩa là đang ở khung giờ rảnh)
             if (!coMocNaoMoKhong) {
                 btnSubmit.disabled = true;
-                document.getElementById('report-status').innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-hourglass-half"></i> Hiện không trong khung giờ nhận báo cáo (chỉ mở trước và sau 30 phút tính từ mốc).</span>';
+                document.getElementById('report-status').innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-hourglass-half"></i> Hiện không trong khung giờ nhận báo cáo (chỉ mở trước 30 phút tính từ mốc).</span>';
                 document.getElementById('vote-count').disabled = true;
             } else {
                 // Đảm bảo nút Submit mở nếu đang trong giờ hợp lệ (và chưa quá 22:30 chung)
