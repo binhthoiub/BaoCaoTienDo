@@ -497,22 +497,7 @@
 
         document.getElementById('vote-count').addEventListener('input', tinhTyLe);
         document.getElementById('report-time').addEventListener('change', () => { khoiTaoToBauCu(auth.currentUser.email); });
-        // 1. HÀM PHỤ TRỢ KIỂM TRA DỮ LIỆU ĐÃ NỘP TRÊN FIREBASE
-        async function kiemTraMocGioDaNop(email, mocGio) {
-            try {
-                const snapshot = await db.ref('reports').orderByChild('email').equalTo(email).once('value');
-                let check = false;
-                snapshot.forEach(child => {
-                    if (child.val().khung_gio === mocGio) check = true;
-                });
-                return check;
-            } catch (error) {
-                console.error("Lỗi khi kiểm tra Firebase:", error);
-                return false;
-            }
-        }
 
-        
         // HÀM RÀNG BUỘC KHUNG GIỜ CẬP NHẬT (MỞ ĐÚNG 30 PHÚT)
         function rangBuocKhungGio() {
             const now = new Date();
@@ -525,15 +510,11 @@
             const options = selectGio.options;
             const btnSubmit = document.getElementById('btnSubmit');
             let coMocNaoMoKhong = false; // Biến kiểm tra xem có đang trong giờ báo cáo không
-            // Cố gắng lấy email nếu không được truyền vào
-            //if (!emailDangNhap && typeof auth !== 'undefined' && auth.currentUser) {
-           //     emailDangNhap = auth.currentUser.email;
-           // }    
-            
+
             const tenGoc = {
                 "09:00": "09:00 Sáng",
                 "11:00": "11:00 Trưa",
-                "14:30": "14:30 Chiều",                
+                "14:30": "14:30 Chiều",
                 "18:30": "18:30 Chiều",
                 "21:00": "21:00 Tối"
             };
@@ -545,7 +526,7 @@
                 let mocGio = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
 
                 // Thiết lập cửa sổ thời gian: Từ đúng mốc giờ đến +30 phút (0.5 giờ)
-                let gioMo = mocGio - 1; 
+                let gioMo = mocGio - 0.75; 
                 let gioDong = mocGio ; 
 
                 // 1. Nếu chưa tới giờ
@@ -560,26 +541,21 @@
                 } 
                 // 3. Nằm đúng trong 30 phút vàng
                 else {
-                    // KIỂM TRA XEM MỐC NÀY ĐÃ CÓ DỮ LIỆU CHƯA
-/
-                        options[i].disabled = false;
-                        options[i].text = tenGoc[val] + " 🟢 (Đang mở)";
-                        selectGio.value = val; 
-                        coMocNaoMoKhong = true;
-                    
+                    options[i].disabled = false;
+                    options[i].text = tenGoc[val] + " ✅ (Đang mở)";
+                    selectGio.value = val; // Tự động trỏ thanh chọn vào mốc đang mở
+                    coMocNaoMoKhong = true;
                 }
             }
 
             // Xử lý nút Submit: Nếu không có mốc nào đang mở (nghĩa là đang ở khung giờ rảnh)
             if (!coMocNaoMoKhong) {
                 btnSubmit.disabled = true;
-                document.getElementById('report-status').innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-hourglass-half"></i> Hiện không trong khung giờ nhận báo cáo (chỉ mở trước 30 phút tính từ mốc).</span>';
+                document.getElementById('report-status').innerHTML = '<span style="color:#d32f2f;"><i class="fas fa-hourglass-half"></i> Hiện không trong khung giờ nhận báo cáo (chỉ mở trước và sau 30 phút tính từ mốc).</span>';
                 document.getElementById('vote-count').disabled = true;
             } else {
                 // Đảm bảo nút Submit mở nếu đang trong giờ hợp lệ (và chưa quá 22:30 chung)
-                if (typeof laGioKhoaHeThong === "function" && laGioKhoaHeThong()) {
-                    btnSubmit.disabled = true;
-                } else {
+                if(!laGioKhoaHeThong()){
                     btnSubmit.disabled = false;
                     document.getElementById('report-status').innerHTML = '';
                     document.getElementById('vote-count').disabled = false;
@@ -589,4 +565,3 @@
     </script>
 </body>
 </html>
-
