@@ -519,6 +519,8 @@
             const selectGio = document.getElementById('report-time');
             const options = selectGio.options;
             const btnSubmit = document.getElementById('btnSubmit');
+            const user = auth.currentUser; 
+            let userEmail = user ? user.email : "";
             let coMocNaoMoKhong = false; // Biến kiểm tra xem có đang trong giờ báo cáo không
 
             const tenGoc = {
@@ -551,10 +553,23 @@
                 } 
                 // 3. Nằm đúng trong 30 phút vàng
                 else {
+                    let daNop = false;
+                    if (userEmail)
+                    {
+                        daNop = await kiemTraMocGioDaNop(userEmail, val); 
+                    }
+                    if (daNop)
+                    {
+                        options[i].disabled = true;
+                        options[i].text = tenGoc[val] + " ✅ (Đã cập nhật)";
+                    }
+                    esle
+                    {                        
                     options[i].disabled = false;
                     options[i].text = tenGoc[val] + " ✅ (Đang mở)";
                     selectGio.value = val; // Tự động trỏ thanh chọn vào mốc đang mở
                     coMocNaoMoKhong = true;
+                    }
                 }
             }
 
