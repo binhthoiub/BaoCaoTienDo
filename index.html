@@ -514,7 +514,7 @@
 
         
         // HÀM RÀNG BUỘC KHUNG GIỜ CẬP NHẬT (MỞ ĐÚNG 30 PHÚT)
-        function rangBuocKhungGio(emailDangNhap) {
+        function rangBuocKhungGio() {
             const now = new Date();
             const gio = now.getHours();
             const phut = now.getMinutes();
@@ -526,9 +526,9 @@
             const btnSubmit = document.getElementById('btnSubmit');
             let coMocNaoMoKhong = false; // Biến kiểm tra xem có đang trong giờ báo cáo không
             // Cố gắng lấy email nếu không được truyền vào
-            if (!emailDangNhap && typeof auth !== 'undefined' && auth.currentUser) {
-                emailDangNhap = auth.currentUser.email;
-            }    
+            //if (!emailDangNhap && typeof auth !== 'undefined' && auth.currentUser) {
+           //     emailDangNhap = auth.currentUser.email;
+           // }    
             
             const tenGoc = {
                 "09:00": "09:00 Sáng",
@@ -561,20 +561,12 @@
                 // 3. Nằm đúng trong 30 phút vàng
                 else {
                     // KIỂM TRA XEM MỐC NÀY ĐÃ CÓ DỮ LIỆU CHƯA
-                    let daNop = false;
-                    if (emailDangNhap) {
-                        daNop = await kiemTraMocGioDaNop(emailDangNhap, val);
-                    }
-
-                    if (daNop) {
-                        options[i].disabled = true;
-                        options[i].text = tenGoc[val] + " ✅ (Đã cập nhật)";
-                    } else {
+/
                         options[i].disabled = false;
                         options[i].text = tenGoc[val] + " 🟢 (Đang mở)";
                         selectGio.value = val; 
                         coMocNaoMoKhong = true;
-                    }
+                    
                 }
             }
 
