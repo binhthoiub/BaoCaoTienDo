@@ -528,8 +528,8 @@
                 let mocGio = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
 
                 // Thiết lập cửa sổ thời gian: Từ đúng mốc giờ đến +30 phút (0.5 giờ)
-                let gioMo = mocGio - 0.05; 
-                let gioDong = mocGio + 0.05; 
+                let gioMo = mocGio - 0.3; 
+                let gioDong = mocGio + 0.3; 
 
                 // 1. Nếu chưa tới giờ
                 if (gioThapPhan < gioMo) {
