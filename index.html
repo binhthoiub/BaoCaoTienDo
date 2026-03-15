@@ -515,7 +515,7 @@
 
             const tenGoc = {
                 "09:00": "09:00 Sáng",
-                "11:30": "11:30 Trưa",
+                "11:00": "11:00 Trưa",
                 "15:00": "15:00 Chiều",
                 "19:00": "19:00 Tối",
                 "22:00": "22:00 Tối"
@@ -528,8 +528,8 @@
                 let mocGio = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
 
                 // Thiết lập cửa sổ thời gian: Từ đúng mốc giờ đến +30 phút (0.5 giờ)
-                let gioMo = mocGio -0.5; 
-                let gioDong = mocGio + 0.5; 
+                let gioMo = mocGio - 1; 
+                let gioDong = mocGio ; 
 
                 // 1. Nếu chưa tới giờ
                 if (gioThapPhan < gioMo) {
