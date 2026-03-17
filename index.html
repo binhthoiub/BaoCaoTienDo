@@ -171,7 +171,23 @@
             </div>
         </div>
     </div>
-
+<div id="adminManagementView" style="display:none; padding:15px;">
+    <div class="container" style="max-width: 500px;">
+        <h2 style="color:var(--danger); text-align:center;">QUẢN TRỊ CAO CẤP</h2>
+        <div class="admin-card">
+            <h3>KHÓA DASHBOARD TỔNG</h3>
+            <button id="masterLockBtn" onclick="toggleMasterLock()" class="btn-main" style="background:var(--danger)">ĐANG KIỂM TRA...</button>
+        </div>
+        <div class="admin-card" style="border-left-color: var(--primary);">
+            <h3>DANH SÁCH TÀI KHOẢN</h3>
+            <table class="table-admin">
+                <thead><tr><th>Tổ</th><th>Thao tác</th></tr></thead>
+                <tbody id="adminUserTable"></tbody>
+            </table>
+        </div>
+        <button onclick="showView('dashboardView')" class="btn-main" style="background:#666">QUAY LẠI DASHBOARD</button>
+    </div>
+</div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
