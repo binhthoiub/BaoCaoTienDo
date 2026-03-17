@@ -660,12 +660,13 @@ auth.onAuthStateChanged(user => {
         } 
         // Luồng 3: Nếu là Tổ bầu cử -> Đi vào trang Báo cáo
         else {
-            showView('reportView');
-            if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
+            //showView('reportView');
+             alert("Email đang đăng nhập là: [" + user.email + "]");
+            //if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
         }
     } else {
         //showView('loginView');
-         alert("Email đang đăng nhập là: [" + user.email + "]");
+        
     }
 });
     </script>
