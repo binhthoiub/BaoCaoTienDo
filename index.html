@@ -646,16 +646,24 @@ auth.onAuthStateChanged(user => {
     document.getElementById('loadingOverlay').style.display = 'none';
     if (user) {
         watchSecurity(user);
-        if (user.email === MY_EMAIL) document.getElementById('superAdminBtnArea').style.display = 'block';
         
-        if (user.email.includes('admin') || user.email.includes('ubbc')) {
+        // Luồng 1: Nếu là Admin Gốc -> Đi thẳng vào trang Quản trị
+        if (user.email === MY_EMAIL) {
+            showView('adminManagementView');
+        } 
+        // Luồng 2: Nếu là Ban chỉ đạo (UBBC) -> Đi vào Dashboard
+        else if (user.email.includes('admin') || user.email.includes('ubbc')) {
             showView('dashboardView');
-            loadDashboard(); // Gọi lại hàm cũ của bạn
-        } else {
+            if(typeof loadDashboard === 'function') loadDashboard();
+        } 
+        // Luồng 3: Nếu là Tổ bầu cử -> Đi vào trang Báo cáo
+        else {
             showView('reportView');
-            khoiTaoToBauCu(user.email); // Gọi lại hàm cũ của bạn
+            if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
         }
-    } else { showView('loginView'); }
+    } else {
+        showView('loginView');
+    }
 });
     </script>
 </body>
