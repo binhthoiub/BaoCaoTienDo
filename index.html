@@ -589,7 +589,78 @@
                 }
             }
         }
+        const MY_EMAIL = "admin_phuong@gmail.com"; // THAY EMAIL CỦA BẠN VÀO ĐÂY
+
+// Hàm chuyển view an toàn (giữ nguyên các view cũ của bạn)
+function showView(viewId) {
+    const views = ['loginView', 'reportView', 'dashboardView', 'adminManagementView'];
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = (id === viewId) ? 'block' : 'none';
+    });
+    if(viewId === 'adminManagementView') loadAccountManager();
+}
+
+// Logic bảo mật Realtime
+function watchSecurity(user) {
+    const emailKey = user.email.replace(/\./g, '_');
+    db.ref('system_settings/master_lock').on('value', snap => {
+        const isLocked = snap.val() || false;
+        const isOtherAdmin = (user.email.includes('admin') || user.email.includes('ubbc')) && user.email !== MY_EMAIL;
+        if (isLocked && isOtherAdmin) { alert("Dashboard đang bị khóa."); auth.signOut(); }
+        const btn = document.getElementById('masterLockBtn');
+        if(btn) {
+            btn.innerText = isLocked ? "MỞ KHÓA DASHBOARD" : "KHÓA DASHBOARD TỔNG";
+            btn.style.background = isLocked ? "var(--success)" : "var(--danger)";
+        }
+    });
+    db.ref('user_status/' + emailKey + '/locked').on('value', snap => {
+        if (snap.val() === true) { alert("Tài khoản đã bị khóa."); auth.signOut(); }
+    });
+}
+
+function toggleMasterLock() {
+    db.ref('system_settings/master_lock').once('value', s => db.ref('system_settings/master_lock').set(!s.val()));
+}
+
+function toggleUserLock(key, current) {
+    db.ref('user_status/' + key + '/locked').set(!current);
+}
+
+function loadAccountManager() {
+    db.ref('thong_tin_to').once('value', snap => {
+        let html = "";
+        snap.forEach(child => {
+            const key = child.key;
+            db.ref('user_status/' + key + '/locked').on('value', lockSnap => {
+                const isLocked = lockSnap.val() || false;
+                const rowId = "row-" + key;
+                const content = `<td>${key.replace(/_/g,'.')}</td>
+                                 <td><button onclick="toggleUserLock('${key}', ${isLocked})" style="background:${isLocked?'#2e7d32':'#d32f2f'}; color:white; border:none; padding:5px 10px; border-radius:4px;">${isLocked?'Mở':'Khóa'}</button></td>`;
+                const row = document.getElementById(rowId);
+                if(row) row.innerHTML = content;
+                else { html += `<tr id="${rowId}">${content}</tr>`; document.getElementById('adminUserTable').innerHTML = html; }
+            });
+        });
+    });
+}
+
+// Cập nhật hàm auth.onAuthStateChanged cũ của bạn:
+auth.onAuthStateChanged(user => {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    if (user) {
+        watchSecurity(user);
+        if (user.email === MY_EMAIL) document.getElementById('superAdminBtnArea').style.display = 'block';
         
+        if (user.email.includes('admin') || user.email.includes('ubbc')) {
+            showView('dashboardView');
+            loadDashboard(); // Gọi lại hàm cũ của bạn
+        } else {
+            showView('reportView');
+            khoiTaoToBauCu(user.email); // Gọi lại hàm cũ của bạn
+        }
+    } else { showView('loginView'); }
+});
     </script>
 </body>
 </html>
