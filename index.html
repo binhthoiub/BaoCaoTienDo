@@ -650,7 +650,7 @@ auth.onAuthStateChanged(user => {
         watchSecurity(user);
         
         // Luồng 1: Nếu là Admin Gốc -> Đi thẳng vào trang Quản trị
-        if (user.email === MY_EMAIL) {
+        if (user.email.includes('quantri') ) {
             showView('adminManagementView');
         } 
         // Luồng 2: Nếu là Ban chỉ đạo (UBBC) -> Đi vào Dashboard
