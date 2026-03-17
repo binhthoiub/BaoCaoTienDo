@@ -3,70 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-title" content="Tiến Độ Bầu Cử">
     <title>Hệ Thống Báo Cáo Bầu Cử Phường</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root { --primary: #0d47a1; --success: #2e7d32; --danger: #d32f2f; --warning: #ef6c00; --bg: #f0f2f5; --white: #ffffff; --text-muted: #666666; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: #333; }
+        
+        /* GIỮ NGUYÊN CSS CŨ */
         .container { max-width: 400px; margin: 30px auto; background: white; padding: 25px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .btn-main { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 15px; }
-        
-        /* CSS CHO TRANG QUẢN TRỊ */
+
+        /* BỔ SUNG CSS CHO QUẢN TRỊ */
         .admin-card { background: #fff; padding: 15px; border-radius: 10px; border-left: 5px solid var(--danger); margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .table-admin { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-        .table-admin th, .table-admin td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        .table-admin { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .table-admin th, .table-admin td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
 
-    <div id="loadingOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <div id="loadingOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; justify-content:center; align-items:center;">
         <h2><i class="fas fa-spinner fa-spin"></i> ĐANG TẢI...</h2>
     </div>
 
     <div id="loginView" style="display:none;" class="container">
-        <h2 style="text-align:center; color:var(--primary);">ĐĂNG NHẬP</h2>
-        <input type="email" id="email" placeholder="Email" style="width:90%; padding:10px; margin:10px 0;">
-        <input type="password" id="password" placeholder="Mật khẩu" style="width:90%; padding:10px; margin:10px 0;">
-        <button id="btnLogin" class="btn-main">VÀO HỆ THỐNG</button>
+        <h2 style="text-align:center; color:var(--primary);">Hệ Thống Báo Cáo</h2>
+        <input type="email" id="email" placeholder="Email" style="width:96%; padding:10px; margin:10px 0;">
+        <input type="password" id="password" placeholder="Mật khẩu" style="width:96%; padding:10px; margin:10px 0;">
+        <button id="btnLogin" class="btn-main">ĐĂNG NHẬP</button>
+    </div>
+
+    <div id="reportView" style="display:none;" class="container">
+        <h2 id="to-title"></h2>
+        <button onclick="auth.signOut()" class="btn-main" style="background:#666">ĐĂNG XUẤT</button>
     </div>
 
     <div id="dashboardView" style="display:none; padding:15px;">
         <h2 style="text-align:center;">DASHBOARD TỔNG HỢP</h2>
-        <div id="superAdminSection" style="display:none; margin-bottom:15px;">
+        
+        <div id="superAdminBtnArea" style="display:none; margin-bottom:15px;">
             <button onclick="showView('adminManagementView')" class="btn-main" style="background:var(--danger)">
-                <i class="fas fa-tools"></i> MỞ TRANG QUẢN TRỊ HỆ THỐNG
+                <i class="fas fa-user-shield"></i> CÀI ĐẶT HỆ THỐNG
             </button>
         </div>
+
         <div id="dashboardContent">
-            <p>Đang tải dữ liệu...</p>
-        </div>
-        <button onclick="auth.signOut()" class="btn-main" style="background:#666; margin-top:20px;">ĐĂNG XUẤT</button>
+            </div>
+        <button onclick="auth.signOut()" class="btn-main" style="background:#666">ĐĂNG XUẤT</button>
     </div>
 
     <div id="adminManagementView" style="display:none; padding:15px;">
-        <h2 style="color:var(--danger); text-align:center;">QUẢN TRỊ HỆ THỐNG</h2>
-        
-        <div class="admin-card">
-            <h3>KHÓA DASHBOARD</h3>
-            <button id="masterLockBtn" onclick="toggleMasterLock()" class="btn-main"></button>
-        </div>
+        <div class="container" style="max-width: 500px;">
+            <h2 style="color:var(--danger); text-align:center;">QUẢN TRỊ CAO CẤP</h2>
+            
+            <div class="admin-card">
+                <h3>TRẠNG THÁI DASHBOARD</h3>
+                <button id="masterLockBtn" onclick="toggleMasterLock()" class="btn-main"></button>
+            </div>
 
-        <div class="admin-card" style="border-left-color: var(--primary);">
-            <h3>QUẢN LÝ TÀI KHOẢN</h3>
-            <div style="overflow-x:auto;">
+            <div class="admin-card" style="border-left-color: var(--primary);">
+                <h3>DANH SÁCH TÀI KHOẢN</h3>
                 <table class="table-admin">
-                    <thead><tr><th>Tổ</th><th>Khóa</th></tr></thead>
-                    <tbody id="userListTable"></tbody>
+                    <thead><tr><th>Tài khoản</th><th>Thao tác</th></tr></thead>
+                    <tbody id="adminUserTable"></tbody>
                 </table>
             </div>
+            <button onclick="showView('dashboardView')" class="btn-main" style="background:#666">QUAY LẠI</button>
         </div>
-
-        <button onclick="showView('dashboardView')" class="btn-main" style="background:#666">QUAY LẠI DASHBOARD</button>
-    </div>
-
-    <div id="reportView" style="display:none;" class="container">
-        <h3>BÁO CÁO TIẾN ĐỘ</h3>
-        <button onclick="auth.signOut()" class="btn-main" style="background:#666">ĐĂNG XUẤT</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -74,6 +78,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
+        // CẤU HÌNH CỦA BẠN
         const firebaseConfig = {
             apiKey: "AIzaSyBWPhJtIdk2sdBgDMrksneW7Lum7UywjFw",
             authDomain: "theodoi-2e7cb.firebaseapp.com",
@@ -84,20 +89,33 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
-        // 1. EMAIL ADMIN CỦA BẠN (CẦN SỬA ĐÚNG EMAIL NÀY)
-        const ADMIN_GOC = "quantri_bt@binhthoi.tphcm.gov.vn";
+        // 1. EMAIL ADMIN GỐC (Thay đổi tại đây)
+        const MY_EMAIL = "admin_goc@binhthoi.gov.vn";
 
-        // 2. LOGIC BẢO MẬT VÀ PHÂN QUYỀN
-        function setupSecurity(user) {
+        // 2. HÀM CHUYỂN VIEW (CẬP NHẬT ĐỂ KHÔNG LỖI TRANG TRẮNG)
+        function showView(viewId) {
+            const views = ['loginView', 'reportView', 'dashboardView', 'adminManagementView'];
+            views.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.style.display = (id === viewId) ? 'block' : 'none';
+            });
+            if(viewId === 'adminManagementView') loadAccountManager();
+        }
+
+        // 3. LOGIC BẢO MẬT REALTIME
+        function watchSecurity(user) {
             const emailKey = user.email.replace(/\./g, '_');
 
-            // Theo dõi khóa Dashboard
-            db.ref('security/dashboard_locked').on('value', snap => {
+            // Khóa Dashboard tổng
+            db.ref('system_settings/master_lock').on('value', snap => {
                 const isLocked = snap.val() || false;
-                if (isLocked && user.email !== ADMIN_GOC && (user.email.includes('admin') || user.email.includes('ubbc'))) {
-                    alert("Hệ thống Dashboard đang bảo trì.");
+                const isOtherAdmin = (user.email.includes('admin') || user.email.includes('ubbc')) && user.email !== MY_EMAIL;
+                
+                if (isLocked && isOtherAdmin) {
+                    alert("Trang Dashboard hiện đang bị khóa.");
                     auth.signOut();
                 }
+
                 const btn = document.getElementById('masterLockBtn');
                 if(btn) {
                     btn.innerText = isLocked ? "MỞ KHÓA DASHBOARD" : "KHÓA DASHBOARD TỔNG";
@@ -105,74 +123,73 @@
                 }
             });
 
-            // Theo dõi khóa tài khoản cá nhân
-            db.ref('user_locks/' + emailKey).on('value', snap => {
+            // Khóa tài khoản cá nhân
+            db.ref('user_status/' + emailKey + '/locked').on('value', snap => {
                 if (snap.val() === true) {
-                    alert("Tài khoản đã bị khóa.");
+                    alert("Tài khoản của bạn đã bị khóa.");
                     auth.signOut();
                 }
             });
         }
 
-        // 3. QUẢN LÝ USER
+        // 4. HÀM QUẢN TRỊ
         function toggleMasterLock() {
-            db.ref('security/dashboard_locked').once('value', s => db.ref('security/dashboard_locked').set(!s.val()));
+            db.ref('system_settings/master_lock').once('value', s => db.ref('system_settings/master_lock').set(!s.val()));
         }
 
         function toggleUserLock(key, current) {
-            db.ref('user_locks/' + key).set(!current);
+            db.ref('user_status/' + key + '/locked').set(!current);
         }
 
-        function loadUserList() {
+        function loadAccountManager() {
             db.ref('thong_tin_to').once('value', snap => {
                 let html = "";
                 snap.forEach(child => {
                     const key = child.key;
-                    db.ref('user_locks/' + key).on('value', s => {
-                        const isLocked = s.val() || false;
-                        const row = document.getElementById('row-'+key);
-                        const content = `<td>${key.replace(/_/g,'.')}</td><td><button onclick="toggleUserLock('${key}',${isLocked})" style="background:${isLocked?'green':'red'}; color:white; border:none; padding:5px; border-radius:4px;">${isLocked?'Mở':'Khóa'}</button></td>`;
+                    db.ref('user_status/' + key + '/locked').on('value', lockSnap => {
+                        const isLocked = lockSnap.val() || false;
+                        const rowId = "row-" + key;
+                        const content = `<td>${key.replace(/_/g,'.')}</td>
+                                         <td><button onclick="toggleUserLock('${key}', ${isLocked})" style="background:${isLocked?'#2e7d32':'#d32f2f'}; color:white; border:none; padding:5px 10px; border-radius:4px;">${isLocked?'Mở':'Khóa'}</button></td>`;
+                        const row = document.getElementById(rowId);
                         if(row) row.innerHTML = content;
                         else {
-                            html += `<tr id="row-${key}">${content}</tr>`;
-                            document.getElementById('userListTable').innerHTML = html;
+                            html += `<tr id="${rowId}">${content}</tr>`;
+                            document.getElementById('adminUserTable').innerHTML = html;
                         }
                     });
                 });
             });
         }
 
-        // 4. ĐIỀU HƯỚNG CHÍNH
+        // 5. TRẠNG THÁI ĐĂNG NHẬP (GIỮ LOGIC CŨ)
         auth.onAuthStateChanged(user => {
             document.getElementById('loadingOverlay').style.display = 'none';
             if (user) {
-                setupSecurity(user);
-                if (user.email === ADMIN_GOC) document.getElementById('superAdminSection').style.display = 'block';
+                watchSecurity(user);
+                if (user.email === MY_EMAIL) document.getElementById('superAdminBtnArea').style.display = 'block';
 
                 if (user.email.includes('admin') || user.email.includes('ubbc')) {
                     showView('dashboardView');
-                    // Gọi hàm loadDashboard() gốc của bạn ở đây
+                    if(typeof loadDashboard === 'function') loadDashboard();
                 } else {
                     showView('reportView');
-                    // Gọi hàm khoiTaoToBauCu(user.email) gốc của bạn ở đây
+                    if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
                 }
             } else {
                 showView('loginView');
             }
         });
 
-        function showView(id) {
-            ['loginView', 'reportView', 'dashboardView', 'adminManagementView'].forEach(v => {
-                const el = document.getElementById(v);
-                if(el) el.style.display = (v === id ? 'block' : 'none');
-            });
-            if(id === 'adminManagementView') loadUserList();
-        }
-
+        // Nút đăng nhập
         document.getElementById('btnLogin').onclick = () => {
-            auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-                .catch(e => alert("Lỗi: " + e.message));
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert("Lỗi: " + err.message));
         };
+
+        // --- CÁC HÀM CŨ CỦA BẠN (loadDashboard, khoiTaoToBauCu...) ---
+        // Bạn hãy dán lại các hàm đó vào dưới này để code hoạt động đầy đủ.
     </script>
 </body>
 </html>
