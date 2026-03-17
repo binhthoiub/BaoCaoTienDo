@@ -644,29 +644,31 @@ function loadAccountManager() {
 // Cập nhật hàm auth.onAuthStateChanged cũ của bạn:
 auth.onAuthStateChanged(user => {
     document.getElementById('loadingOverlay').style.display = 'none';
+    
     if (user) {
-        // Thêm dòng này để kiểm tra xem hệ thống đang đọc được email gì
-       
-        watchSecurity(user);
+        // Khởi động theo dõi bảo mật
+        if (typeof watchSecurity === 'function') watchSecurity(user);
         
-        // Luồng 1: Nếu là Admin Gốc -> Đi thẳng vào trang Quản trị
-        if (user.email.includes('quantri') ) {
-            showView('adminManagementView');
+        // LUỒNG 1: Dành riêng cho Email Admin Gốc của bạn
+        if (user.email === MY_EMAIL) {
+            showView('dashboardView'); // Mở Dashboard
+            const btnArea = document.getElementById('superAdminBtnArea');
+            if (btnArea) btnArea.style.display = 'block'; // Hiện nút Cài đặt
+            if (typeof loadDashboard === 'function') loadDashboard(); // Tải số liệu
         } 
-        // Luồng 2: Nếu là Ban chỉ đạo (UBBC) -> Đi vào Dashboard
+        // LUỒNG 2: Dành cho Ban chỉ đạo (UBBC hoặc Admin phụ)
         else if (user.email.includes('admin') || user.email.includes('ubbc')) {
             showView('dashboardView');
-            if(typeof loadDashboard === 'function') loadDashboard();
+            if (typeof loadDashboard === 'function') loadDashboard();
         } 
-        // Luồng 3: Nếu là Tổ bầu cử -> Đi vào trang Báo cáo
+        // LUỒNG 3: Dành cho Tổ bầu cử
         else {
-            //showView('reportView');
-             alert("Email đang đăng nhập là: [" + user.email + "]");
-            //if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
+            showView('reportView');
+            if (typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
         }
     } else {
-        //showView('loginView');
-        
+        // CHƯA ĐĂNG NHẬP -> Về màn hình Login
+        showView('loginView');
     }
 });
     </script>
