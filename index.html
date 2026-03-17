@@ -646,7 +646,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('loadingOverlay').style.display = 'none';
     if (user) {
         // Thêm dòng này để kiểm tra xem hệ thống đang đọc được email gì
-        alert("Email đang đăng nhập là: [" + user.email + "]");
+       
         watchSecurity(user);
         
         // Luồng 1: Nếu là Admin Gốc -> Đi thẳng vào trang Quản trị
@@ -664,7 +664,8 @@ auth.onAuthStateChanged(user => {
             if(typeof khoiTaoToBauCu === 'function') khoiTaoToBauCu(user.email);
         }
     } else {
-        showView('loginView');
+        //showView('loginView');
+         alert("Email đang đăng nhập là: [" + user.email + "]");
     }
 });
     </script>
