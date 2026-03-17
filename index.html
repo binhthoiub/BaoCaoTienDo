@@ -58,10 +58,14 @@
         .td-khuvuc { text-align: left !important; font-weight: bold; color: var(--primary); min-width: 150px; }
         .badge-tl { padding: 6px 12px; border-radius: 20px; font-weight: bold; background: #fff5f5; color: var(--danger); display: inline-block; }
         .badge-tl.ok { background: #e8f5e9; color: var(--success); }
-
+/* Bổ sung CSS Quản trị */
+.admin-card { background: #fff; padding: 15px; border-radius: 10px; border-left: 5px solid var(--danger); margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.table-admin { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+.table-admin th, .table-admin td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } .header-right { position: static; transform: none; margin-top: 10px; } }
+        
     </style>
 </head>
 <body>
